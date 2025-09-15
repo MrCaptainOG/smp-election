@@ -1,0 +1,61 @@
+/* Shared styling: glassy dark theme, professional vibes */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+body {
+  margin:0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg,#0f1724,#071025);
+  color: #e6fff7;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border-radius:16px;
+  padding:28px;
+  width:420px;
+  max-width:94%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,170,0.06);
+  text-align:center;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+h1 { margin:0 0 10px 0; font-size:20px; background: linear-gradient(90deg,#00ffe0,#00ff6a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+input[type="text"], input[type="password"], .card input {
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:none;
+  background: rgba(255,255,255,0.04);
+  color: #eafff3;
+  margin-top:12px;
+  outline:none;
+  font-size:14px;
+}
+
+.cand-list { text-align:left; margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+.radio-label { display:flex; align-items:center; gap:10px; background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; cursor:pointer; }
+.radio-label input { transform: scale(1.05); }
+
+button, .card button {
+  margin-top:16px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  background: linear-gradient(90deg,#00ffe0,#00bfff);
+  color:#012a1a;
+  font-weight:700;
+  box-shadow: 0 6px 18px rgba(0,191,255,0.08);
+}
+
+.msg { margin-top:12px; color:#ffd9d9; font-weight:600; }
+
+/* small responsive tweaks */
+@media (max-width:480px) {
+  .card { padding:18px; width:92%; }
+  .result-name { width:140px; }
+}

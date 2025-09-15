@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SMP Election - Results</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Modal and blur styles (inline to keep single-file) */
+    .page-wrap { filter: blur(6px); transition: filter 0.4s ease; }
+    .unlocked { filter: none !important; }
+    .modal-backdrop {
+      position: fixed; inset: 0; display:flex; align-items:center; justify-content:center;
+      background: rgba(2,6,23,0.6); z-index: 9999; backdrop-filter: blur(2px);
+    }
+    .modal { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius:14px; padding:22px; width:420px; max-width:92%; text-align:center; color:#fff;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .modal input { width:100%; padding:10px; border-radius:10px; border:none; margin-top:10px; background: rgba(255,255,255,0.06); color:#fff; }
+    .modal button { margin-top:12px; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; background: linear-gradient(90deg, #00ffe0, #00bfff); color:#062; font-weight:700; }
+    .small { font-size:13px; opacity:0.9; margin-top:8px; color:#cfeee6; }
+    #results .result-row { margin:10px 0; display:flex; align-items:center; gap:12px; }
+    .result-name { width:220px; text-align:left; font-weight:700; }
+    .result-bar { flex:1; height:24px; background: rgba(255,255,255,0.06); border-radius:8px; overflow:hidden; }
+    .result-fill { height:100%; text-align:center; font-weight:700; color:#042; background: linear-gradient(90deg,#00ffe0,#00ff6a); }
+  </style>
+</head>
+<body>
+  <div id="modal" class="modal-backdrop" aria-hidden="false">
+    <div class="modal">
+      <h2>Results Locked</h2>
+      <p class="small">Enter secret code to reveal results for everyone.</p>
+      <input id="secretInput" placeholder="Enter secret code" autocomplete="off" />
+      <button id="unlockBtn">Unlock Results</button>
+      <p id="modalMsg" class="small"></p>
+    </div>
+  </div>
+
+  <div id="page" class="page-wrap" style="padding:36px; max-width:900px; margin:40px auto; background: transparent;">
+    <h1 style="text-align:center; margin-bottom:14px;">📊 SMP Election — Live Results</h1>
+    <div id="results"></div>
+    <p style="text-align:center; margin-top:16px;"><a href="index.html" style="color:#00ffe0">← Back to Vote</a></p>
+    <div style="text-align:center; margin-top:10px;">
+      <button id="lockNow" style="padding:8px 12px; border-radius:8px; border:none; cursor:pointer;">Lock Results (admin)</button>
+    </div>
+  </div>
+
+<script>
+  const modal = document.getElementById("modal");
+  const page = document.getElementById("page");
+  const unlockBtn = document.getElementById("unlockBtn");
+  const secretInput = document.getElementById("secretInput");
+  const modalMsg = document.getElementById("modalMsg");
+  const lockNow = document.getElementById("lockNow");
+
+  let resultsInterval = null;
+  let unlockPollInterval = null;
+
+  async function loadResults() {
+    try {
+      const r = await fetch("/results");
+      if (!r.ok) return;
+      const data = await r.json();
+      renderResults(data);
+    } catch (err) {
+      console.error("Failed to load results:", err);
+    }
+  }
+
+  function renderResults(data) {
+    const container = document.getElementById("results");
+    container.innerHTML = "";
+    const total = Object.values(data).reduce((s, v) => s + (parseInt(v)||0), 0);
+    for (const [name, count] of Object.entries(data)) {
+      const row = document.createElement("div");
+      row.className = "result-row";
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "result-name";
+      nameDiv.textContent = name;
+      const barWrapper = document.createElement("div");
+      barWrapper.className = "result-bar";
+      const percent = total > 0 ? Math.round((count/total) * 100) : 0;
+      const fill = document.createElement("div");
+      fill.className = "result-fill";
+      fill.style.width = percent + "%";
+      fill.textContent = `${count} (${percent}%)`;
+      barWrapper.appendChild(fill);
+      row.appendChild(nameDiv);
+      row.appendChild(barWrapper);
+      container.appendChild(row);
+    }
+  }
+
+  async function checkUnlocked() {
+    try {
+      const r = await fetch("/is-unlocked");
+      const j = await r.json();
+      if (j.unlocked) unlockUI();
+    } catch (err) {
+      console.error("unlock check failed", err);
+    }
+  }
+
+  function unlockUI() {
+    if (modal && modal.parentNode) modal.style.display = "none";
+    page.classList.add("unlocked");
+    if (!resultsInterval) {
+      loadResults();
+      resultsInterval = setInterval(loadResults, 3000);
+    }
+    if (unlockPollInterval) { clearInterval(unlockPollInterval); unlockPollInterval = null; }
+  }
+
+  unlockBtn.addEventListener("click", async () => {
+    const code = secretInput.value.trim();
+    if (!code) { modalMsg.textContent = "Enter the secret code."; return; }
+    modalMsg.textContent = "Checking...";
+    try {
+      const r = await fetch("/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+      const j = await r.json();
+      if (j.success) {
+        modalMsg.textContent = "Unlocked! Revealing results...";
+        setTimeout(() => { checkUnlocked(); }, 500);
+      } else {
+        modalMsg.textContent = j.message || "Wrong code";
+      }
+    } catch (err) {
+      modalMsg.textContent = "Server error";
+      console.error(err);
+    }
+  });
+
+  // admin lock button: ask for secret and call /lock
+  lockNow.addEventListener("click", async () => {
+    const code = prompt("Enter admin secret to lock results:");
+    if (!code) return;
+    try {
+      const r = await fetch("/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+      const j = await r.json();
+      if (j.success) {
+        // show modal again for all
+        modal.style.display = "flex";
+        page.classList.remove("unlocked");
+        if (resultsInterval) { clearInterval(resultsInterval); resultsInterval = null; }
+        // start polling to detect unlock by others
+        if (!unlockPollInterval) unlockPollInterval = setInterval(checkUnlocked, 2000);
+        alert("Results locked.");
+      } else {
+        alert(j.message || "Failed to lock (wrong code)");
+      }
+    } catch (err) {
+      alert("Server error");
+      console.error(err);
+    }
+  });
+
+  (function init() {
+    checkUnlocked();
+    unlockPollInterval = setInterval(checkUnlocked, 2000);
+    loadResults();
+    if (!resultsInterval) resultsInterval = setInterval(loadResults, 3000);
+    secretInput.addEventListener("keydown", (e) => { if (e.key === "Enter") unlockBtn.click(); });
+  })();
+</script>
+</body>
+</html>
