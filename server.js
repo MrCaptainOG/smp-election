@@ -47,7 +47,7 @@ const restrictions = {
     // insert voters if table empty
     const v = await pool.query("SELECT COUNT(*) FROM voters");
     if (parseInt(v.rows[0].count, 10) === 0) {
-      await pool.query(\`
+      await pool.query(`
         INSERT INTO voters (real_name) VALUES
         ('Gaurav Kumar'),
         ('Shaksham Yadav'),
@@ -55,18 +55,18 @@ const restrictions = {
         ('Ayush Kumar'),
         ('Archit Ki Behen'),
         ('Ayush Ki Behen')
-      \`);
+      `);
     }
 
     // insert candidates if empty
     const c = await pool.query("SELECT COUNT(*) FROM candidates");
     if (parseInt(c.rows[0].count, 10) === 0) {
-      await pool.query(\`
+      await pool.query(`
         INSERT INTO candidates (name) VALUES
         ('MrCaptain7777'),
         ('.Yakshbhaiya7690'),
         ('archit_pro2013')
-      \`);
+      `);
     }
 
     // settings: results_unlocked default false
