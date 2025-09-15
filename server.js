@@ -37,12 +37,12 @@ const restrictions = {
       );
     `);
 
-    await pool.query(\`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT
       );
-    \`);
+      `);
 
     // insert voters if table empty
     const v = await pool.query("SELECT COUNT(*) FROM voters");
