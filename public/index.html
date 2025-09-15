@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SMP Election Voting</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>SMP Election — Vote</h1>
+    <input id="realName" placeholder="Enter your real name" autocomplete="off" />
+    <div id="candidates" class="cand-list"></div>
+    <button id="submitBtn">Submit Vote</button>
+    <p id="msg" class="msg"></p>
+    <p style="margin-top:12px;"><a href="results.html">View Results🏆</a></p>
+  </div>
+
+  <script>
+    const candidates = ["MrCaptain7777", ".Yakshbhaiya7690", "archit_pro2013"];
+    const candDiv = document.getElementById("candidates");
+
+    // create radio buttons
+    candidates.forEach(c => {
+      const label = document.createElement("label");
+      label.className = "radio-label";
+      label.innerHTML = '<input type="radio" name="candidate" value="' + c + '"> ' + c;
+      candDiv.appendChild(label);
+    });
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const real_name = document.getElementById("realName").value.trim();
+      const selected = document.querySelector('input[name="candidate"]:checked');
+      const msg = document.getElementById("msg");
+      msg.textContent = "";
+
+      if (!real_name || !selected) {
+        msg.textContent = "Enter your real name and select a candidate.";
+        return;
+      }
+
+      const payload = { real_name, candidate: selected.value };
+      try {
+        const res = await fetch("/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        msg.textContent = data.message || data.error || (data.success ? "Voted" : "Error");
+        if (data.success) {
+          // disable inputs
+          document.getElementById("realName").disabled = true;
+          document.querySelectorAll('input[name="candidate"]').forEach(i => i.disabled = true);
+          document.getElementById("submitBtn").disabled = true;
+        }
+      } catch (err) {
+        console.error(err);
+        msg.textContent = "Server error";
+      }
+    });
+
+    // allow Enter to submit
+    document.getElementById("realName").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("submitBtn").click();
+    });
+  </script>
+</body>
+</html>
