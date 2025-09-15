@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 5000;
 const SECRET = process.env.SECRET_CODE || "changeme";
 
 app.use(bodyParser.json());
